@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::content})}">
+<body>
+<section class="card" th:fragment="content">
+    <div class="h1">Profile</div>
+    <form th:action="@{/profile}" method="post" th:object="${profile}">
+        <div class="row">
+            <div class="field" style="flex:1">
+                <label>Display Name</label>
+                <input class="input" th:field="*{displayName}"/>
+            </div>
+            <div class="field">
+                <label>Public Contact</label>
+                <input type="checkbox" th:field="*{publicContact}"/>
+            </div>
+        </div>
+        <div class="row">
+            <div class="field">
+                <label>Preferred Method</label>
+                <select class="select" th:field="*{preferredMethod}">
+                    <option value="">(none)</option>
+                    <option value="EMAIL">Email</option>
+                    <option value="PHONE">Phone</option>
+                </select>
+            </div>
+            <div class="field"><label>Email</label><input class="input" th:field="*{contactEmail}" placeholder="you@example.com"/></div>
+            <div class="field"><label>Phone (E.164)</label><input class="input" th:field="*{contactPhone}" placeholder="+15551234567"/></div>
+        </div>
+        <div class="actions">
+            <button class="btn">Save Profile</button>
+        </div>
+    </form>
+    <div class="small kv">Contact is revealed to counterparties after a swap is ACCEPTED.</div>
+</section>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::content})}">
+<body>
+<section class="card" th:fragment="content">
+    <div class="h2" th:text="${form.id} != null ? 'Edit Listing' : 'Add Listing'">Listing</div>
+
+    <form th:object="${form}"
+          th:with="actionUrl=${(form.id != null) ? '/library/' + form.id : '/library'}"
+          th:action="@{${actionUrl}}"
+          method="post">
+
+        <div class="row">
+            <div class="field" style="flex:1">
+                <label>Title</label>
+                <input class="input" th:field="*{title}"/>
+                <div class="error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+            </div>
+            <div class="field" style="flex:1">
+                <label>Author</label>
+                <input class="input" th:field="*{author}"/>
+                <div class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}"></div>
+            </div>
+            <div class="field">
+                <label>ISBN</label>
+                <input class="input" th:field="*{isbn}"/>
+                <div class="error" th:if="${#fields.hasErrors('isbn')}" th:errors="*{isbn}"></div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="field">
+                <label>Condition</label>
+                <select class="select" th:field="*{condition}">
+                    <option th:each="c : ${T(com.example.bookex.entity.enums.Condition).values()}"
+                            th:value="${c}" th:text="${c}"></option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Available</label>
+                <input type="checkbox" th:field="*{available}"/>
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Notes</label>
+            <textarea class="textarea" th:field="*{notes}"></textarea>
+        </div>
+
+        <div class="actions">
+            <button class="btn" type="submit" th:text="${form.id} != null ? 'Save' : 'Create'">Save</button>
+            <a class="btn btn-secondary" th:href="@{/library}">Back</a>
+        </div>
+    </form>
+
+    <div th:if="${form.id != null}">
+        <div class="h3" style="margin-top:16px">Images</div>
+
+        <form th:action="@{/library/{id}/images(id=${form.id})}"
+              method="post" enctype="multipart/form-data" class="row">
+            <input type="file" name="file" accept="image/png,image/jpeg"/>
+            <button class="btn">Upload</button>
+        </form>
+
+        <div class="media" style="margin-top:8px">
+            <div class="thumb" th:each="img : ${images}">
+                <img th:src="@{${img.path}}" alt="image"/>
+                <form th:action="@{/library/{id}/images/{no}/delete(id=${form.id}, no=${img.imageNo})}"
+                      method="post" style="margin-top:6px">
+                    <button class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

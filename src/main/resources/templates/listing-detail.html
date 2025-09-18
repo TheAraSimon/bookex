@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::content})}">
+<body>
+<section class="card" th:fragment="content">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div>
+            <div class="h1" th:text="${listing.book.title}">Title</div>
+            <div class="kv" th:text="${listing.book.author}">Author</div>
+            <div style="margin:8px 0"><span class="badge" th:text="${listing.condition}">GOOD</span></div>
+        </div>
+        <div class="small" th:text="'Listing #'+${listing.id}">#</div>
+    </div>
+
+    <div class="media" style="margin:8px 0">
+        <div class="thumb" th:each="img : ${listing.images}">
+            <img th:src="${img.path}" alt="image"/>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="h3">Notes</div>
+        <div th:text="${listing.notes}">No notes</div>
+    </div>
+
+    <div class="section">
+        <div class="h3">Owner</div>
+        <div th:text="${listing.owner.displayName}">Owner</div>
+        <div class="kv" th:if="${listing.owner.contact == null}">Contact hidden (revealed after acceptance)</div>
+        <div th:if="${listing.owner.contact != null}">
+            <strong>Contact:</strong> <span th:text="${listing.owner.contact}"></span>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="h3" th:text="'Ratings (avg of '+${bookAvg.count}+')'">Ratings</div>
+        <div class="row">
+            <span th:text="'Difficulty: '+${bookAvg.difficulty}"></span>
+            <span th:text="'Emotion: '+${bookAvg.emotion}"></span>
+            <span th:text="'Enjoyment: '+${bookAvg.enjoyment}"></span>
+        </div>
+    </div>
+
+    <div class="actions">
+        <form th:if="${#authorization.expression('isAuthenticated()')}"
+              th:action="@{/swaps/create}" method="post">
+            <input type="hidden" name="listingId" th:value="${listing.id}"/>
+            <input type="hidden" name="message" value="Interested in swapping!"/>
+            <button class="btn" th:disabled="${!listing.available}">Request Swap</button>
+        </form>
+        <span class="kv" th:if="${!listing.available}">Not available</span>
+    </div>
+</section>
+</body>
+</html>

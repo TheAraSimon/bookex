@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:fragment="layout(body)">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${pageTitle} ?: 'BookSwap'">BookSwap</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}"/>
+</head>
+<body>
+<header class="topbar">
+    <div class="container">
+        <a class="brand" th:href="@{/browse}">📚 BookSwap</a>
+        <nav class="nav">
+            <a th:href="@{/browse}">Browse</a>
+            <a th:href="@{/library}">My Library</a>
+            <a th:href="@{/swaps}">My Swaps</a>
+            <a th:href="@{/profile}">Profile</a>
+        </nav>
+        <div class="auth">
+            <span id="whoami" th:text="${#httpServletRequest.remoteUser} ?: ''"></span>
+
+            <a class="btn" th:if="${#httpServletRequest.remoteUser == null}"
+               th:href="@{/login}">Login</a>
+
+            <form th:if="${#httpServletRequest.remoteUser != null}"
+                  th:action="@{/logout}" method="post">
+                <button class="btn btn-secondary">Logout</button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+    <div th:if="${ok}" class="flash" th:text="${ok}">OK</div>
+    <div th:insert="${body}">[content]</div>
+</main>
+
+<footer class="footer">
+    <div class="container small">
+        <strong>BookSwap</strong> — swap books locally with ease.
+    </div>
+</footer>
+</body>
+</html>

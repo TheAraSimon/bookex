@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::content})}">
+<body>
+<section class="section" th:fragment="content">
+    <div class="h1">Browse Listings</div>
+    <div class="grid cards">
+        <div class="card" th:each="c : ${listings}">
+            <div class="h3" th:text="${c.book.title}">Title</div>
+            <div class="kv" th:text="${c.book.author}">Author</div>
+            <div class="row" style="margin:6px 0;">
+                <span class="badge" th:text="${c.condition}">GOOD</span>
+            </div>
+            <div class="small kv">Owner: <span th:text="${c.owner.displayName}">Owner</span></div>
+            <div class="actions">
+                <a class="btn btn-outline" th:href="@{|/listings/${c.id}|}">View</a>
+                <form th:action="@{/swaps/create}" method="post"
+                      th:if="${#authorization.expression('isAuthenticated()')}">
+                    <input type="hidden" name="listingId" th:value="${c.id}"/>
+                    <button class="btn" th:disabled="${!c.available}">Request</button>
+                </form>
+                <span class="kv" th:if="${!c.available}">Not available</span>
+            </div>
+        </div>
+        <div class="card" th:if="${#lists.isEmpty(listings)}">No listings yet.</div>
+    </div>
+</section>
+</body>
+</html>

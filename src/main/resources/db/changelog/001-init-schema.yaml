@@ -1,0 +1,184 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-users-books
+      author: java
+      changes:
+        # USERS
+        - createTable:
+            tableName: users
+            columns:
+              - column: { name: id, type: BIGINT, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: email, type: VARCHAR(255), constraints: { nullable: false, unique: true } }
+              - column: { name: password, type: VARCHAR(255), constraints: { nullable: false } }
+              - column: { name: username, type: VARCHAR(80), constraints: { nullable: false } }
+              - column: { name: role, type: VARCHAR(10), defaultValue: "USER", constraints: { nullable: false } }
+              - column: { name: public_contact, type: BOOLEAN, defaultValueBoolean: false, constraints: { nullable: false } }
+              - column: { name: preffered_method, type: VARCHAR(10) }
+              - column: { name: contact_email, type: VARCHAR(255) }
+              - column: { name: phone, type: VARCHAR(20) }
+              - column: { name: created_at, type: TIMESTAMPTZ, defaultValueComputed: "CURRENT_TIMESTAMP", constraints: { nullable: false } }
+              - column: { name: updated_at, type: TIMESTAMPTZ, defaultValueComputed: "CURRENT_TIMESTAMP", constraints: { nullable: false } }
+
+        - addUniqueConstraint:
+            tableName: users
+            columnNames: username
+            constraintName: uq_users_username
+
+        # BOOKS
+        - createTable:
+            tableName: books
+            columns:
+              - column: { name: id, type: BIGINT, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: title, type: VARCHAR(200), constraints: { nullable: false } }
+              - column: { name: author, type: VARCHAR(120), constraints: { nullable: false } }
+              - column: { name: isbn, type: VARCHAR(13) }
+              - column: { name: created_at, type: TIMESTAMPTZ, defaultValueComputed: "CURRENT_TIMESTAMP", constraints: { nullable: false } }
+              - column: { name: updated_at, type: TIMESTAMPTZ, defaultValueComputed: "CURRENT_TIMESTAMP", constraints: { nullable: false } }
+
+        # CHECKS FOR USERS & BOOKS (SQL)
+        - sql:
+            splitStatements: true
+            stripComments: true
+            sql: |
+              ALTER TABLE users ADD CONSTRAINT ck_users_role CHECK (role IN ('USER','ADMIN'));
+              ALTER TABLE users ADD CONSTRAINT ck_users_preferred CHECK (preffered_method IS NULL OR preffered_method IN ('EMAIL','PHONE'));
+              ALTER TABLE books ADD CONSTRAINT ck_books_isbn_len CHECK (isbn IS NULL OR char_length(isbn) IN (10,13));
+
+  - changeSet:
+      id: 002-listings-images
+      author: java
+      changes:
+        # BOOK_LISTING
+        - createTable:
+            tableName: book_listing
+            columns:
+              - column: { name: id, type: BIGINT, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: user_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: book_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: condition, type: VARCHAR(10), constraints: { nullable: false } }
+              - column: { name: available, type: BOOLEAN, defaultValueBoolean: true, constraints: { nullable: false } }
+              - column: { name: notes, type: VARCHAR(500) }
+              - column: { name: created_at, type: TIMESTAMPTZ, defaultValueComputed: "CURRENT_TIMESTAMP", constraints: { nullable: false } }
+              - column: { name: updated_at, type: TIMESTAMPTZ, defaultValueComputed: "CURRENT_TIMESTAMP", constraints: { nullable: false } }
+
+        - addForeignKeyConstraint:
+            baseTableName: book_listing
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_book_listing_user
+
+        - addForeignKeyConstraint:
+            baseTableName: book_listing
+            baseColumnNames: book_id
+            referencedTableName: books
+            referencedColumnNames: id
+            onDelete: RESTRICT
+            constraintName: fk_book_listing_book
+
+        # BOOK_IMAGES
+        - createTable:
+            tableName: book_images
+            columns:
+              - column: { name: listing_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: image_no, type: SMALLINT, constraints: { nullable: false } }
+              - column: { name: path, type: VARCHAR(500), constraints: { nullable: false } }
+              - column: { name: created_at, type: TIMESTAMPTZ, defaultValueComputed: "CURRENT_TIMESTAMP", constraints: { nullable: false } }
+              - column: { name: updated_at, type: TIMESTAMPTZ, defaultValueComputed: "CURRENT_TIMESTAMP", constraints: { nullable: false } }
+
+        - addPrimaryKey:
+            tableName: book_images
+            columnNames: listing_id, image_no
+            constraintName: pk_book_images
+
+        - addForeignKeyConstraint:
+            baseTableName: book_images
+            baseColumnNames: listing_id
+            referencedTableName: book_listing
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_book_image_listing
+
+        # CHECKS FOR LISTINGS & IMAGES (SQL)
+        - sql:
+            splitStatements: true
+            stripComments: true
+            sql: |
+              ALTER TABLE book_listing ADD CONSTRAINT ck_listing_condition CHECK (condition IN ('NEW','GOOD','USED','WORN'));
+              ALTER TABLE book_images  ADD CONSTRAINT ck_book_images_no CHECK (image_no BETWEEN 1 AND 5);
+
+  - changeSet:
+      id: 003-ratings-swaps
+      author: java
+      changes:
+        # RATINGS (composite PK)
+        - createTable:
+            tableName: ratings
+            columns:
+              - column: { name: user_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: book_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: difficulty, type: SMALLINT, constraints: { nullable: false } }
+              - column: { name: emotion, type: SMALLINT, constraints: { nullable: false } }
+              - column: { name: enjoyment, type: SMALLINT, constraints: { nullable: false } }
+              - column: { name: created_at, type: TIMESTAMPTZ, defaultValueComputed: "CURRENT_TIMESTAMP", constraints: { nullable: false } }
+              - column: { name: updated_at, type: TIMESTAMPTZ, defaultValueComputed: "CURRENT_TIMESTAMP", constraints: { nullable: false } }
+
+        - addPrimaryKey:
+            tableName: ratings
+            columnNames: user_id, book_id
+            constraintName: pk_ratings
+
+        - addForeignKeyConstraint:
+            baseTableName: ratings
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_rating_user
+
+        - addForeignKeyConstraint:
+            baseTableName: ratings
+            baseColumnNames: book_id
+            referencedTableName: books
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_rating_book
+
+        # SWAP_REQUESTS
+        - createTable:
+            tableName: swap_requests
+            columns:
+              - column: { name: id, type: BIGINT, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: book_listing_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: user_id, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: status, type: VARCHAR(20), constraints: { nullable: false } }
+              - column: { name: message, type: VARCHAR(300) }
+              - column: { name: created_at, type: TIMESTAMPTZ, defaultValueComputed: "CURRENT_TIMESTAMP", constraints: { nullable: false } }
+              - column: { name: updated_at, type: TIMESTAMPTZ, defaultValueComputed: "CURRENT_TIMESTAMP", constraints: { nullable: false } }
+
+        - addForeignKeyConstraint:
+            baseTableName: swap_requests
+            baseColumnNames: book_listing_id
+            referencedTableName: book_listing
+            referencedColumnNames: id
+            onDelete: CASCADE
+            constraintName: fk_swap_request_listing
+
+        - addForeignKeyConstraint:
+            baseTableName: swap_requests
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: RESTRICT
+            constraintName: fk_swap_request_user
+
+        # CHECKS FOR RATINGS & SWAPS (SQL)
+        - sql:
+            splitStatements: true
+            stripComments: true
+            sql: |
+              ALTER TABLE ratings       ADD CONSTRAINT ck_rating_difficulty CHECK (difficulty BETWEEN 1 AND 5);
+              ALTER TABLE ratings       ADD CONSTRAINT ck_rating_emotion    CHECK (emotion    BETWEEN 1 AND 5);
+              ALTER TABLE ratings       ADD CONSTRAINT ck_rating_enjoyment  CHECK (enjoyment  BETWEEN 1 AND 5);
+              ALTER TABLE swap_requests ADD CONSTRAINT ck_swap_status       CHECK (status IN ('PENDING','ACCEPTED','DECLINED','COMPLETED','CANCELLED'));

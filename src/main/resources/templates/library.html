@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::content})}">
+<body>
+<section class="section" th:fragment="content">
+    <div class="row" style="justify-content:space-between">
+        <div class="h1">My Library</div>
+        <a class="btn" th:href="@{/library/new}">+ Add Listing</a>
+    </div>
+
+    <table class="table">
+        <thead><tr><th>Book</th><th>Condition</th><th>Available</th><th>Actions</th></tr></thead>
+        <tbody>
+        <tr th:each="c : ${cards}">
+            <td>
+                <span th:text="${c.book.title}"></span>
+                <span class="kv">by </span>
+                <span th:text="${c.book.author}"></span>
+            </td>
+            <td><span class="badge" th:text="${c.condition}"></span></td>
+            <td th:text="${c.available} ? 'Yes':'No'">Yes</td>
+            <td class="row">
+                <a class="btn btn-secondary" th:href="@{|/library/${c.id}/edit|}">Edit</a>
+                <form th:action="@{|/library/${c.id}/delete|}" method="post"
+                      onsubmit="return confirm('Delete listing?')">
+                    <button class="btn btn-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(cards)}"><td colspan="4">No listings yet</td></tr>
+        </tbody>
+    </table>
+</section>
+</body>
+</html>

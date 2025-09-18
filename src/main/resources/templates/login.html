@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::content})}">
+<body>
+<section class="card" th:fragment="content">
+    <div class="h1">Login</div>
+
+    <form th:action="@{/login}" method="post">
+        <div class="row">
+            <div class="field"><label>Username</label><input class="input" name="username"/></div>
+            <div class="field"><label>Password</label><input type="password" class="input" name="password"/></div>
+        </div>
+        <div class="actions"><button class="btn">Login</button></div>
+        <div class="small kv">No account? <a th:href="@{/register}">Register</a></div>
+        <div class="kv" th:if="${param.error}" style="color:#b91c1c">Invalid credentials</div>
+    </form>
+</section>
+</body>
+</html>

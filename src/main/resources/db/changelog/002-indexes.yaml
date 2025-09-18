@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-secondary-indexes
+      author: java
+      changes:
+        - createIndex:
+            tableName: users
+            indexName: idx_users_username
+            unique: true
+            columns:
+              - column:
+                  name: username
+
+        - createIndex:
+            tableName: book_listing
+            indexName: idx_book_listing_owner
+            columns:
+              - column: { name: user_id }
+        - createIndex:
+            tableName: book_listing
+            indexName: idx_book_listing_book
+            columns:
+              - column: { name: book_id }
+
+        - createIndex:
+            tableName: swap_requests
+            indexName: idx_swaps_listing_created
+            columns:
+              - column: { name: book_listing_id }
+              - column: { name: created_at }
+        - createIndex:
+            tableName: swap_requests
+            indexName: idx_swaps_user_created
+            columns:
+              - column: { name: user_id }
+              - column: { name: created_at }
