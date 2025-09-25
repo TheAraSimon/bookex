@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>BookSwap — Prototype</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="topbar">
+    <div class="container">
+        <div class="brand" onclick="Router.go('#/browse')">📚 BookSwap</div>
+        <nav class="nav">
+            <a href="#/browse" data-route>Browse</a>
+            <a href="#/library" data-route>My Library</a>
+            <a href="#/swaps" data-route>My Swaps</a>
+            <a href="#/profile" data-route>Profile</a>
+        </nav>
+        <div class="auth">
+            <span id="whoami"></span>
+            <button class="btn" id="loginBtn">Login</button>
+            <button class="btn btn-secondary" id="logoutBtn">Logout</button>
+        </div>
+    </div>
+</header>
+
+<main class="container" id="appRoot"></main>
+
+<template id="tpl-flash">
+    <div class="flash" role="alert"></div>
+</template>
+
+<footer class="footer">
+    <div class="container small">
+        <strong>Scenarios supported:</strong> Basic (request) & Advanced (accept, contacts, complete). • Prototype only.
+    </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
