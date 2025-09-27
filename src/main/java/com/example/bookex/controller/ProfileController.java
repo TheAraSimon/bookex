@@ -14,14 +14,14 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/profile")
-public class WebProfileController {
+public class ProfileController {
 
-    private final UserService users;
+    private final UserService userService;
 
     @GetMapping
     public String profile(@AuthenticationPrincipal User me, Model model,
                           @RequestParam(value="ok", required = false) String ok) {
-        model.addAttribute("profile", users.getProfile(me.getId()));
+        model.addAttribute("profile", userService.getProfile(me.getId()));
         model.addAttribute("ok", ok);
         return "profile";
     }
@@ -29,9 +29,9 @@ public class WebProfileController {
     @PostMapping
     public String save(@AuthenticationPrincipal User me,
                        @Valid @ModelAttribute("profile") UserProfileDto dto,
-                       BindingResult br) {
-        if (br.hasErrors()) return "profile";
-        users.updateProfile(me.getId(), dto);
+                       BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) return "profile";
+        userService.updateProfile(me.getId(), dto);
         return "redirect:/profile?ok=Profile+saved";
     }
 }

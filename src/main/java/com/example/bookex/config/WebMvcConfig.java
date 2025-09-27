@@ -1,6 +1,6 @@
 package com.example.bookex.config;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -10,14 +10,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Configuration
-@RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
 
-    private final AppProperties appProperties;
+    @Value("${app.upload-dir:uploads}")
+    private String uploadDir;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String uploadDir = appProperties.getUploadDir();
         Path uploadPath = StringUtils.hasText(uploadDir)
                 ? Paths.get(uploadDir).toAbsolutePath().normalize()
                 : Paths.get("uploads").toAbsolutePath().normalize();
@@ -28,9 +27,5 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(location)
                 .setCachePeriod(3600);
-
-        registry.addResourceHandler("/swagger-ui/**")
-                .addResourceLocations("classpath:/META-INF/resources/webjars/springdoc-ui/")
-                .resourceChain(false);
     }
 }

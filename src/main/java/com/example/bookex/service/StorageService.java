@@ -5,9 +5,11 @@ import com.example.bookex.entity.BookImage;
 import com.example.bookex.entity.BookImageId;
 import com.example.bookex.entity.BookListing;
 import com.example.bookex.entity.User;
+import com.example.bookex.exceptions.NotFoundException;
 import com.example.bookex.repository.BookImageRepository;
 import com.example.bookex.repository.BookListingRepository;
 import com.example.bookex.util.DtoMapper;
+import com.example.bookex.util.ServiceGuards;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,8 +28,8 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class StorageService {
 
-    private final BookImageRepository images;
-    private final BookListingRepository listings;
+    private final BookImageRepository bookImageRepository;
+    private final BookListingRepository bookListingRepository;
 
     @Value("${app.max-images-per-listing:5}")
     private int maxImages;
@@ -37,88 +39,84 @@ public class StorageService {
 
     @Transactional
     public BookImageDto addImage(User owner, Long listingId, MultipartFile file) throws IOException {
-        BookListing listing = listings.findById(listingId)
-                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
-        ensureOwner(owner, listing);
+        BookListing bookListing = bookListingRepository.findById(listingId)
+                .orElseThrow(() -> new NotFoundException("Listing not found"));
+        ServiceGuards.requireOwner(owner, bookListing);
 
-        long currentCount = images.countByListing(listing);
+        long currentCount = bookImageRepository.countByListing(bookListing);
         if (currentCount >= maxImages) {
             throw new IllegalStateException("Image limit reached (" + maxImages + ")");
         }
 
         validateImageFile(file);
 
-        short nextNo = nextAvailableImageNo(listing);
+        short nextNo = nextAvailableImageNo(bookListing);
 
 
         String ext = safeExt(file.getOriginalFilename());
         String filename = nextNo + "-" + UUID.randomUUID() + "." + ext;
-        Path dir = Paths.get(uploadDir, "listings", listing.getId().toString());
+        Path dir = Paths.get(uploadDir, "listings", bookListing.getId().toString());
         Files.createDirectories(dir);
         Path target = dir.resolve(filename).normalize();
         if (!target.startsWith(dir)) throw new SecurityException("Invalid path");
 
         Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
 
-        BookImageId id = new BookImageId(listing.getId(), nextNo);
-        String publicPath = "/uploads/listings/" + listing.getId() + "/" + filename;
+        BookImageId id = new BookImageId(bookListing.getId(), nextNo);
+        String publicPath = "/uploads/listings/" + bookListing.getId() + "/" + filename;
         BookImage img = BookImage.builder()
                 .id(id)
-                .listing(listing)
+                .listing(bookListing)
                 .path(publicPath)
                 .build();
-        images.save(img);
+        bookImageRepository.save(img);
         return DtoMapper.toImageDto(img);
     }
 
     @Transactional
     public void deleteImage(User owner, Long listingId, short imageNo) throws IOException {
-        BookListing listing = listings.findById(listingId)
-                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
-        ensureOwner(owner, listing);
+        BookListing bookListing = bookListingRepository.findById(listingId)
+                .orElseThrow(() -> new NotFoundException("Listing not found"));
+        ServiceGuards.requireOwner(owner, bookListing);
 
         BookImageId id = new BookImageId(listingId, imageNo);
-        BookImage img = images.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Image not found"));
+        BookImage img = bookImageRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Image not found"));
 
         removeFileIfExists(img.getPath());
 
-        images.delete(img);
+        bookImageRepository.delete(img);
     }
 
     public List<BookImageDto> listImages(Long listingId) {
-        BookListing listing = listings.findById(listingId)
-                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
-        return DtoMapper.toImageDtoList(images.findByListingOrderByIdImageNoAsc(listing));
+        BookListing bookListing = bookListingRepository.findById(listingId)
+                .orElseThrow(() -> new NotFoundException("Listing not found"));
+        return DtoMapper.toImageDtoList(bookImageRepository.findByListingOrderByIdImageNoAsc(bookListing));
     }
 
     // --- helpers
-    private static void ensureOwner(User owner, BookListing l) {
-        if (!l.getUser().getId().equals(owner.getId())) {
-            throw new SecurityException("You are not the owner of this listing");
-        }
-    }
 
     private static void validateImageFile(MultipartFile file) {
         if (file == null || file.isEmpty()) throw new IllegalArgumentException("File is empty");
         if (file.getSize() > 5L * 1024 * 1024) {
             throw new IllegalArgumentException("File too large (max 5MB)");
         }
-        String ct = file.getContentType();
-        if (ct == null || !(ct.equalsIgnoreCase("image/jpeg") || ct.equalsIgnoreCase("image/png"))) {
+        String contentType = file.getContentType();
+        if (contentType == null || !(contentType.equalsIgnoreCase("image/jpeg")
+                || contentType.equalsIgnoreCase("image/png"))) {
             throw new IllegalArgumentException("Only JPEG/PNG allowed");
         }
         String name = file.getOriginalFilename();
-        String ext = FilenameUtils.getExtension(name);
-        if (ext == null) throw new IllegalArgumentException("Invalid file extension");
-        String lower = ext.toLowerCase();
+        String extension = FilenameUtils.getExtension(name);
+        if (extension == null) throw new IllegalArgumentException("Invalid file extension");
+        String lower = extension.toLowerCase();
         if (!(lower.equals("jpg") || lower.equals("jpeg") || lower.equals("png"))) {
             throw new IllegalArgumentException("Only JPG/PNG extensions allowed");
         }
     }
 
     private short nextAvailableImageNo(BookListing listing) {
-        var existing = images.findByListingOrderByIdImageNoAsc(listing)
+        List<Short> existing = bookImageRepository.findByListingOrderByIdImageNoAsc(listing)
                 .stream().map(i -> i.getId().getImageNo()).sorted().toList();
         for (short i = 1; i <= (short) maxImages; i++) {
             if (!existing.contains(i)) return i;
@@ -127,9 +125,9 @@ public class StorageService {
     }
 
     private String safeExt(String filename) {
-        String ext = FilenameUtils.getExtension(filename);
-        if (!StringUtils.hasText(ext)) throw new IllegalArgumentException("File must have extension");
-        return ext.toLowerCase();
+        String extension = FilenameUtils.getExtension(filename);
+        if (!StringUtils.hasText(extension)) throw new IllegalArgumentException("File must have extension");
+        return extension.toLowerCase();
     }
 
     private void removeFileIfExists(String publicPath) throws IOException {

@@ -90,7 +90,7 @@ public final class DtoMapper {
 
     // --- LISTING DETAIL ---
     public static ListingDetailDto toDetailDto(BookListing l, List<BookImage> images) {
-        var d = new ListingDetailDto();
+        ListingDetailDto d = new ListingDetailDto();
         d.setId(l.getId());
         d.setBook(toBookDto(l.getBook()));
         d.setOwner(toUserPublic(l.getUser(), false));
@@ -108,7 +108,7 @@ public final class DtoMapper {
 
     // --- SWAP VIEW DTO ---
     public static SwapViewDto toSwapDto(SwapRequest s) {
-        var dto = new SwapViewDto();
+        SwapViewDto dto = new SwapViewDto();
         dto.setId(s.getId());
         dto.setStatus(s.getStatus().name());
         dto.setListing(toCardDto(s.getListing()));

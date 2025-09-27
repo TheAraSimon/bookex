@@ -17,7 +17,7 @@ import jakarta.validation.Valid;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserService users;
+    private final UserService userService;
 
     @GetMapping("/register")
     public String showRegistrationForm(Model model) {
@@ -27,7 +27,6 @@ public class AuthController {
         return "register";
     }
 
-    // POST /register — обработать регистрацию
     @PostMapping("/register")
     public String processRegistration(@Valid @ModelAttribute("req") RegisterRequest req,
                                       BindingResult br,
@@ -37,7 +36,7 @@ public class AuthController {
             return "register";
         }
         try {
-            users.register(req.getEmail(), req.getUsername(), req.getPassword());
+            userService.register(req.getEmail(), req.getUsername(), req.getPassword());
         } catch (IllegalArgumentException ex) {
             model.addAttribute("error", ex.getMessage());
             return "register";

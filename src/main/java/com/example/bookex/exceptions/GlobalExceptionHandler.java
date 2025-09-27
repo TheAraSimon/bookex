@@ -1,168 +1,136 @@
 package com.example.bookex.exceptions;
 
-import com.example.bookex.dto.exceptions.ApiError;
-import com.example.bookex.dto.exceptions.FieldErrorEntry;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.NoSuchElementException;
 
 @Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@RestControllerAdvice
+@ControllerAdvice(annotations = Controller.class)
 public class GlobalExceptionHandler {
 
     // --- 400 BAD REQUEST ---
     @ExceptionHandler({
-            BadRequestException.class,
             HttpMessageNotReadableException.class,
             MissingServletRequestParameterException.class,
-            MethodArgumentTypeMismatchException.class
+            MethodArgumentTypeMismatchException.class,
+            IllegalArgumentException.class
     })
-    public ApiError handleBadRequest(Exception ex, HttpServletRequest req) {
+    public ModelAndView handleBadRequest(Exception ex, HttpServletRequest req) {
         log.warn("400 Bad Request: {}", ex.getMessage());
-        return build(HttpStatus.BAD_REQUEST, safeMessage(ex), req, null);
+        return errorView(HttpStatus.BAD_REQUEST, safe(ex.getMessage()), req);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ApiError handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpServletRequest req) {
-        var fieldErrors = new ArrayList<FieldErrorEntry>();
-        ex.getBindingResult().getFieldErrors().forEach(fe ->
-                fieldErrors.add(new FieldErrorEntry(fe.getField(), fe.getDefaultMessage()))
-        );
-        log.warn("400 Validation error on {} fields", fieldErrors.size());
-        return build(HttpStatus.BAD_REQUEST, "Validation failed", req, fieldErrors);
+    public ModelAndView handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpServletRequest req) {
+        String msg = "Validation failed";
+        if (ex.getBindingResult() != null && !ex.getBindingResult().getFieldErrors().isEmpty()) {
+            msg += ": " + ex.getBindingResult().getFieldErrors().get(0).getDefaultMessage();
+        }
+        log.warn("400 Validation error: {}", msg);
+        return errorView(HttpStatus.BAD_REQUEST, msg, req);
     }
 
     @ExceptionHandler(BindException.class)
-    public ApiError handleBindException(BindException ex, HttpServletRequest req) {
-        var fieldErrors = new ArrayList<FieldErrorEntry>();
-        ex.getBindingResult().getFieldErrors().forEach(fe ->
-                fieldErrors.add(new FieldErrorEntry(fe.getField(), fe.getDefaultMessage()))
-        );
-        log.warn("400 Bind validation error on {} fields", fieldErrors.size());
-        return build(HttpStatus.BAD_REQUEST, "Validation failed", req, fieldErrors);
+    public ModelAndView handleBindException(BindException ex, HttpServletRequest req) {
+        String msg = "Validation failed";
+        if (!ex.getFieldErrors().isEmpty()) {
+            msg += ": " + ex.getFieldErrors().get(0).getDefaultMessage();
+        }
+        log.warn("400 Bind validation error: {}", msg);
+        return errorView(HttpStatus.BAD_REQUEST, msg, req);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ApiError handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest req) {
-        List<FieldErrorEntry> list = ex.getConstraintViolations()
-                .stream()
-                .map(this::toFieldEntry)
-                .toList();
-        log.warn("400 Constraint violations: {}", list.size());
-        return build(HttpStatus.BAD_REQUEST, "Validation failed", req, list);
-    }
-
-    // --- 400 BAD REQUEST ---
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ApiError handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest req) {
-        return build(HttpStatus.BAD_REQUEST, safeMessage(ex), req, null);
+    public ModelAndView handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest req) {
+        String msg = ex.getConstraintViolations().stream().findFirst()
+                .map(v -> v.getPropertyPath() + " " + v.getMessage())
+                .orElse("Validation failed");
+        log.warn("400 Constraint violation: {}", msg);
+        return errorView(HttpStatus.BAD_REQUEST, msg, req);
     }
 
     // --- 401 UNAUTHORIZED ---
-    @ExceptionHandler({ UnauthorizedException.class, AuthenticationException.class })
-    public ApiError handleUnauthorized(Exception ex, HttpServletRequest req) {
+    @ExceptionHandler(AuthenticationException.class)
+    public String handleUnauthorized(AuthenticationException ex) {
         log.warn("401 Unauthorized: {}", ex.getMessage());
-        return build(HttpStatus.UNAUTHORIZED, safeMessage(ex), req, null);
+        return "redirect:/login?error";
     }
 
     // --- 403 FORBIDDEN ---
-    @ExceptionHandler({ ForbiddenException.class, AccessDeniedException.class, SecurityException.class })
-    public ApiError handleForbidden(Exception ex, HttpServletRequest req) {
+    @ExceptionHandler({AccessDeniedException.class, SecurityException.class })
+    public ModelAndView handleForbidden(Exception ex, HttpServletRequest req) {
         log.warn("403 Forbidden: {}", ex.getMessage());
-        return build(HttpStatus.FORBIDDEN, safeMessage(ex), req, null);
+        return errorView(HttpStatus.FORBIDDEN, "Forbidden", req);
     }
 
     // --- 404 NOT FOUND ---
-    @ExceptionHandler({ NotFoundException.class, java.util.NoSuchElementException.class })
-    public ApiError handleNotFound(Exception ex, HttpServletRequest req) {
+    @ExceptionHandler({ NotFoundException.class, NoSuchElementException.class })
+    public ModelAndView handleNotFound(Exception ex, HttpServletRequest req) {
         log.warn("404 Not Found: {}", ex.getMessage());
-        return build(HttpStatus.NOT_FOUND, safeMessage(ex), req, null);
+        return errorView(HttpStatus.NOT_FOUND, safe(ex.getMessage()), req);
     }
 
     // --- 405 / 415 ---
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ApiError handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
+    public ModelAndView handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
         log.warn("405 Method Not Allowed: {}", ex.getMessage());
-        return build(HttpStatus.METHOD_NOT_ALLOWED, "Method not allowed", req, null);
+        return errorView(HttpStatus.METHOD_NOT_ALLOWED, "Method not allowed", req);
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-    public ApiError handleUnsupportedMediaType(HttpMediaTypeNotSupportedException ex, HttpServletRequest req) {
+    public ModelAndView handleUnsupportedMediaType(HttpMediaTypeNotSupportedException ex, HttpServletRequest req) {
         log.warn("415 Unsupported Media Type: {}", ex.getMessage());
-        return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported media type", req, null);
-    }
-
-    // --- 409 CONFLICT ---
-    @ExceptionHandler({ ConflictException.class, DataIntegrityViolationException.class })
-    public ApiError handleConflict(Exception ex, HttpServletRequest req) {
-        log.warn("409 Conflict: {}", ex.getMessage());
-        return build(HttpStatus.CONFLICT, safeMessage(ex), req, null);
+        return errorView(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported media type", req);
     }
 
     // --- 413 PAYLOAD TOO LARGE ---
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ApiError handleMaxUpload(MaxUploadSizeExceededException ex, HttpServletRequest req) {
+    public ModelAndView handleMaxUpload(MaxUploadSizeExceededException ex, HttpServletRequest req) {
         log.warn("413 Payload too large");
-        return build(HttpStatus.PAYLOAD_TOO_LARGE, "File too large", req, null);
+        return errorView(HttpStatus.PAYLOAD_TOO_LARGE, "File too large", req);
     }
 
     // --- 500 INTERNAL SERVER ERROR ---
     @ExceptionHandler(Exception.class)
-    public ApiError handleAll(Exception ex, HttpServletRequest req) {
+    public ModelAndView handleAll(Exception ex, HttpServletRequest req) {
         log.error("500 Internal Server Error at {}: {}", req.getRequestURI(), ex.getMessage(), ex);
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected server error", req, null);
+        return errorView(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected server error", req);
     }
 
     // helpers
-    private ApiError build(HttpStatus status, String message, HttpServletRequest req, List<FieldErrorEntry> fields) {
-        String path = req.getRequestURI();
-        String requestId = getRequestId(req);
-        return ApiError.builder()
-                .timestamp(Instant.now())
-                .status(status.value())
-                .error(status.getReasonPhrase())
-                .message(message)
-                .path(path)
-                .requestId(requestId)
-                .fieldErrors(fields == null || fields.isEmpty() ? null : fields)
-                .build();
+    private ModelAndView errorView(HttpStatus status, String message, HttpServletRequest req) {
+        ModelAndView mv = new ModelAndView("error"); // templates/error.html
+        mv.setStatus(status);
+        mv.addObject("status", status.value());
+        mv.addObject("error", status.getReasonPhrase());
+        mv.addObject("message", message);
+        mv.addObject("path", req.getRequestURI());
+        mv.addObject("timestamp", Instant.now());
+        return mv;
     }
 
-    private FieldErrorEntry toFieldEntry(ConstraintViolation<?> v) {
-        String field = v.getPropertyPath() == null ? "" : v.getPropertyPath().toString();
-        return new FieldErrorEntry(field, v.getMessage());
-    }
-
-    private String getRequestId(HttpServletRequest req) {
-        String rid = req.getHeader("X-Request-ID");
-        return (rid == null || rid.isBlank()) ? UUID.randomUUID().toString() : rid;
-    }
-
-    private String safeMessage(Exception ex) {
-        String m = ex.getMessage();
-        return (m == null || m.isBlank()) ? ex.getClass().getSimpleName() : m;
+    private String safe(String m) {
+        return (m == null || m.isBlank()) ? "Error" : m;
     }
 }

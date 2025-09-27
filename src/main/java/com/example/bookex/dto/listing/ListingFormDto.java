@@ -11,11 +11,9 @@ import lombok.*;
 public class ListingFormDto {
 
     private Long id;
-
     @NotBlank
     private String title;
     @NotBlank private String author;
-
     private String isbn;
     private Condition condition = Condition.GOOD;
     private boolean available = true;

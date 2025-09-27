@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::content})}">
+<body>
+<section class="card" th:fragment="content">
+
+    <div class="h1">
+        Error <span th:text="${status}">500</span>
+        <span class="kv" th:text="${error}">Internal Server Error</span>
+    </div>
+
+    <div class="section">
+        <div th:text="${message} ?: 'Something went wrong.'">Something went wrong.</div>
+
+        <div class="small kv" style="margin-top:6px" th:switch="${status}">
+            <div th:case="404">The page you are looking for does not exist or was moved.</div>
+            <div th:case="403">You don’t have permission to access this resource.</div>
+            <div th:case="401">You need to log in to continue.</div>
+            <div th:case="413">The uploaded file is too large.</div>
+            <div th:case="400">Your request seems to be invalid. Please check the form/data.</div>
+            <div th:case="*">If the problem persists, please try again later.</div>
+        </div>
+    </div>
+
+    <div class="section small">
+        <div><strong>Path:</strong> <span th:text="${path}">/</span></div>
+        <div><strong>Time:</strong> <span th:text="${timestamp}">now</span></div>
+        <div th:if="${requestId != null}">
+            <strong>Request ID:</strong> <span th:text="${requestId}">-</span>
+        </div>
+    </div>
+
+    <div class="actions">
+        <a class="btn" th:href="@{/browse}">Go to Browse</a>
+        <a class="btn btn-secondary" href="javascript:history.back()">Back</a>
+        <a class="btn btn-secondary" th:href="@{/login}">Login</a>
+    </div>
+</section>
+</body>
+</html>

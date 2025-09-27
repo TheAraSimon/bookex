@@ -13,7 +13,7 @@ import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
-public class WebHomeController {
+public class HomeController {
 
     private final ListingService listingService;
     private final RatingService ratingService;

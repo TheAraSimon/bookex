@@ -1,6 +1,7 @@
 package com.example.bookex.controller;
 
 
+import com.example.bookex.dto.listing.ListingDetailDto;
 import com.example.bookex.dto.listing.ListingFormDto;
 import com.example.bookex.entity.User;
 import com.example.bookex.service.ListingService;
@@ -17,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/library")
-public class WebLibraryController {
+public class LibraryController {
 
     private final ListingService listingService;
     private final StorageService storageService;
@@ -39,26 +40,26 @@ public class WebLibraryController {
     @PostMapping
     public String create(@AuthenticationPrincipal User me,
                          @Valid @ModelAttribute("form") ListingFormDto form,
-                         BindingResult br) {
-        if (br.hasErrors()) return "listing-form";
-        var dto = listingService.createListing(me, form);
+                         BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) return "listing-form";
+        ListingDetailDto listingDetailDto = listingService.createListing(me, form);
         return "redirect:/library?ok=Listing+created";
     }
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
-        var d = listingService.getListingDetail(id);
-        var f = ListingFormDto.builder()
-                .id(d.getId())
-                .title(d.getBook().getTitle())
-                .author(d.getBook().getAuthor())
-                .isbn(d.getBook().getIsbn())
-                .condition(com.example.bookex.entity.enums.Condition.valueOf(d.getCondition()))
-                .available(d.isAvailable())
-                .notes(d.getNotes())
+        ListingDetailDto listingDetailDto = listingService.getListingDetail(id);
+        ListingFormDto listingFormDto = ListingFormDto.builder()
+                .id(listingDetailDto.getId())
+                .title(listingDetailDto.getBook().getTitle())
+                .author(listingDetailDto.getBook().getAuthor())
+                .isbn(listingDetailDto.getBook().getIsbn())
+                .condition(com.example.bookex.entity.enums.Condition.valueOf(listingDetailDto.getCondition()))
+                .available(listingDetailDto.isAvailable())
+                .notes(listingDetailDto.getNotes())
                 .build();
-        model.addAttribute("form", f);
-        model.addAttribute("images", d.getImages());
+        model.addAttribute("form", listingFormDto);
+        model.addAttribute("images", listingDetailDto.getImages());
         return "listing-form";
     }
 
@@ -66,8 +67,8 @@ public class WebLibraryController {
     public String update(@AuthenticationPrincipal User me,
                          @PathVariable Long id,
                          @Valid @ModelAttribute("form") ListingFormDto form,
-                         BindingResult br) {
-        if (br.hasErrors()) return "listing-form";
+                         BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) return "listing-form";
         listingService.updateListing(me, id, form);
         return "redirect:/library?ok=Listing+updated";
     }

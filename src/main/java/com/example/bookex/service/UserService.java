@@ -3,6 +3,7 @@ package com.example.bookex.service;
 import com.example.bookex.dto.user.UserProfileDto;
 import com.example.bookex.dto.user.UserPublicDto;
 import com.example.bookex.entity.User;
+import com.example.bookex.exceptions.NotFoundException;
 import com.example.bookex.repository.UserRepository;
 import com.example.bookex.util.DtoMapper;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class UserService {
 
-    private final UserRepository users;
+    private final UserRepository userRepository;
     private final PasswordEncoder encoder;
 
     @Transactional
@@ -25,36 +26,36 @@ public class UserService {
         email = email.trim().toLowerCase();
         displayName = displayName.trim();
 
-        if (users.findByEmail(email).isPresent()) {
+        if (userRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Email already registered");
         }
-        if (users.existsByUsername(displayName)) {
+        if (userRepository.existsByUsername(displayName)) {
             throw new IllegalArgumentException("Username already taken");
         }
-        User u = new User();
-        u.setEmail(email);
-        u.setUsername(displayName);
-        u.setPassword(encoder.encode(rawPassword));
-        return users.save(u);
+        User user = new User();
+        user.setEmail(email);
+        user.setUsername(displayName);
+        user.setPassword(encoder.encode(rawPassword));
+        return userRepository.save(user);
     }
 
-    public Optional<User> findByEmail(String email) { return users.findByEmail(email); }
-    public Optional<User> findById(Long id) { return users.findById(id); }
+    public Optional<User> findByEmail(String email) { return userRepository.findByEmail(email); }
+    public Optional<User> findById(Long id) { return userRepository.findById(id); }
 
     public UserProfileDto getProfile(Long userId) {
-        User u = users.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return DtoMapper.toProfileDto(u);
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        return DtoMapper.toProfileDto(user);
     }
 
     @Transactional
     public UserProfileDto updateProfile(Long userId, UserProfileDto dto) {
-        User u = users.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
-        DtoMapper.updateUserFromProfile(dto, u);
-        users.save(u);
-        return DtoMapper.toProfileDto(u);
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        DtoMapper.updateUserFromProfile(dto, user);
+        userRepository.save(user);
+        return DtoMapper.toProfileDto(user);
     }
 
-    public UserPublicDto toPublic(User u, boolean reveal) {
-        return DtoMapper.toUserPublic(u, reveal);
+    public UserPublicDto toPublic(User user, boolean reveal) {
+        return DtoMapper.toUserPublic(user, reveal);
     }
 }
