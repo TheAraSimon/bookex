@@ -1,6 +1,8 @@
+<!-- src/main/resources/templates/error.html -->
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout :: layout(~{::content})}">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Error', ~{::content})}">
 <body>
 <section class="card" th:fragment="content">
 
@@ -24,7 +26,14 @@
 
     <div class="section small">
         <div><strong>Path:</strong> <span th:text="${path}">/</span></div>
-        <div><strong>Time:</strong> <span th:text="${timestamp}">now</span></div>
+        <!-- Spring Boot 3 usually provides java.time.Instant -->
+        <div>
+            <strong>Time:</strong>
+            <span th:text="${timestamp}">now</span>
+            <span th:if="${timestamp != null}" class="kv">(
+                <span th:text="${#temporals.format(timestamp, 'yyyy-MM-dd HH:mm:ss')}">formatted</span>
+            )</span>
+        </div>
         <div th:if="${requestId != null}">
             <strong>Request ID:</strong> <span th:text="${requestId}">-</span>
         </div>

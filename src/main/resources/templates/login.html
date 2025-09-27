@@ -1,18 +1,38 @@
+<!-- src/main/resources/templates/login.html -->
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout :: layout(~{::content})}">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Login', ~{::content})}">
 <body>
 <section class="card" th:fragment="content">
     <div class="h1">Login</div>
 
     <form th:action="@{/login}" method="post">
         <div class="row">
-            <div class="field"><label>Username</label><input class="input" name="username"/></div>
-            <div class="field"><label>Password</label><input type="password" class="input" name="password"/></div>
+            <div class="field">
+                <label>Username</label>
+                <input class="input" name="username" autocomplete="username"/>
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="password" class="input" name="password" autocomplete="current-password"/>
+            </div>
         </div>
-        <div class="actions"><button class="btn">Login</button></div>
+
+        <!-- CSRF token (if CSRF is enabled in Security) -->
+        <input th:if="${_csrf}" type="hidden"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}"/>
+
+        <div class="actions">
+            <button class="btn" type="submit">Login</button>
+        </div>
+
         <div class="small kv">No account? <a th:href="@{/register}">Register</a></div>
+
+        <!-- Default Spring Security flags -->
         <div class="kv" th:if="${param.error}" style="color:#b91c1c">Invalid credentials</div>
+        <div class="kv" th:if="${param.logout}" style="color:#0f766e">You have been logged out</div>
     </form>
 </section>
 </body>

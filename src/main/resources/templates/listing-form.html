@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout :: layout(~{::content})}">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(${(form.id != null) ? 'Edit Listing' : 'Add Listing'}, ~{::content})}">
 <body>
 <section class="card" th:fragment="content">
     <div class="h2" th:text="${form.id} != null ? 'Edit Listing' : 'Add Listing'">Listing</div>
@@ -13,17 +14,17 @@
         <div class="row">
             <div class="field" style="flex:1">
                 <label>Title</label>
-                <input class="input" th:field="*{title}"/>
+                <input class="input" th:field="*{title}" placeholder="Book title"/>
                 <div class="error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
             </div>
             <div class="field" style="flex:1">
                 <label>Author</label>
-                <input class="input" th:field="*{author}"/>
+                <input class="input" th:field="*{author}" placeholder="Author name"/>
                 <div class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}"></div>
             </div>
             <div class="field">
                 <label>ISBN</label>
-                <input class="input" th:field="*{isbn}"/>
+                <input class="input" th:field="*{isbn}" placeholder="978..."/>
                 <div class="error" th:if="${#fields.hasErrors('isbn')}" th:errors="*{isbn}"></div>
             </div>
         </div>
@@ -33,8 +34,10 @@
                 <label>Condition</label>
                 <select class="select" th:field="*{condition}">
                     <option th:each="c : ${T(com.example.bookex.entity.enums.Condition).values()}"
-                            th:value="${c}" th:text="${c}"></option>
+                            th:value="${c}"
+                            th:text="${c}">GOOD</option>
                 </select>
+                <div class="error" th:if="${#fields.hasErrors('condition')}" th:errors="*{condition}"></div>
             </div>
             <div class="field">
                 <label>Available</label>
@@ -44,8 +47,13 @@
 
         <div class="field">
             <label>Notes</label>
-            <textarea class="textarea" th:field="*{notes}"></textarea>
+            <textarea class="textarea" th:field="*{notes}" placeholder="Any notes for potential swappers"></textarea>
         </div>
+
+        <!-- CSRF token (only if CSRF is enabled) -->
+        <input th:if="${_csrf}" type="hidden"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}"/>
 
         <div class="actions">
             <button class="btn" type="submit" th:text="${form.id} != null ? 'Save' : 'Create'">Save</button>
@@ -59,17 +67,29 @@
         <form th:action="@{/library/{id}/images(id=${form.id})}"
               method="post" enctype="multipart/form-data" class="row">
             <input type="file" name="file" accept="image/png,image/jpeg"/>
+            <!-- CSRF token for upload -->
+            <input th:if="${_csrf}" type="hidden"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}"/>
             <button class="btn">Upload</button>
         </form>
 
-        <div class="media" style="margin-top:8px">
+        <div class="media" style="margin-top:8px" th:if="${images != null and !#lists.isEmpty(images)}">
             <div class="thumb" th:each="img : ${images}">
-                <img th:src="@{${img.path}}" alt="image"/>
+                <img th:src="@{${img.path}}" alt="listing image" style="max-width:160px;display:block"/>
                 <form th:action="@{/library/{id}/images/{no}/delete(id=${form.id}, no=${img.imageNo})}"
                       method="post" style="margin-top:6px">
+                    <!-- CSRF token for delete -->
+                    <input th:if="${_csrf}" type="hidden"
+                           th:name="${_csrf.parameterName}"
+                           th:value="${_csrf.token}"/>
                     <button class="btn btn-danger">Delete</button>
                 </form>
             </div>
+        </div>
+
+        <div class="kv" style="margin-top:8px" th:if="${images == null or #lists.isEmpty(images)}">
+            No images yet.
         </div>
     </div>
 </section>

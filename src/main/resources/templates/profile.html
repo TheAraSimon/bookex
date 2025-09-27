@@ -1,19 +1,26 @@
+<!-- src/main/resources/templates/profile.html -->
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::content})}">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Profile', ~{::content})}">
 <body>
 <section class="card" th:fragment="content">
     <div class="h1">Profile</div>
+
     <form th:action="@{/profile}" method="post" th:object="${profile}">
         <div class="row">
             <div class="field" style="flex:1">
                 <label>Display Name</label>
                 <input class="input" th:field="*{displayName}"/>
+                <small class="error" th:if="${#fields.hasErrors('displayName')}" th:errors="*{displayName}"></small>
             </div>
+
             <div class="field">
                 <label>Public Contact</label>
                 <input type="checkbox" th:field="*{publicContact}"/>
             </div>
         </div>
+
         <div class="row">
             <div class="field">
                 <label>Preferred Method</label>
@@ -22,15 +29,35 @@
                     <option value="EMAIL">Email</option>
                     <option value="PHONE">Phone</option>
                 </select>
+                <small class="error" th:if="${#fields.hasErrors('preferredMethod')}" th:errors="*{preferredMethod}"></small>
             </div>
-            <div class="field"><label>Email</label><input class="input" th:field="*{contactEmail}" placeholder="you@example.com"/></div>
-            <div class="field"><label>Phone (E.164)</label><input class="input" th:field="*{contactPhone}" placeholder="+15551234567"/></div>
+
+            <div class="field">
+                <label>Email</label>
+                <input class="input" th:field="*{contactEmail}" placeholder="you@example.com" autocomplete="email"/>
+                <small class="error" th:if="${#fields.hasErrors('contactEmail')}" th:errors="*{contactEmail}"></small>
+            </div>
+
+            <div class="field">
+                <label>Phone (E.164)</label>
+                <input class="input" th:field="*{contactPhone}" placeholder="+15551234567" autocomplete="tel"/>
+                <small class="error" th:if="${#fields.hasErrors('contactPhone')}" th:errors="*{contactPhone}"></small>
+            </div>
         </div>
+
+        <!-- CSRF token (only if CSRF is enabled) -->
+        <input th:if="${_csrf}" type="hidden"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}"/>
+
         <div class="actions">
-            <button class="btn">Save Profile</button>
+            <button class="btn" type="submit">Save Profile</button>
         </div>
     </form>
-    <div class="small kv">Contact is revealed to counterparties after a swap is ACCEPTED.</div>
+
+    <div class="small kv">
+        Contact is revealed to counterparties after a swap is <strong>ACCEPTED</strong>.
+    </div>
 </section>
 </body>
 </html>

@@ -1,5 +1,8 @@
+<!-- src/main/resources/templates/library.html -->
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::content})}">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('My Library', ~{::content})}">
 <body>
 <section class="section" th:fragment="content">
     <div class="row" style="justify-content:space-between">
@@ -8,25 +11,40 @@
     </div>
 
     <table class="table">
-        <thead><tr><th>Book</th><th>Condition</th><th>Available</th><th>Actions</th></tr></thead>
+        <thead>
+        <tr>
+            <th>Book</th>
+            <th>Condition</th>
+            <th>Available</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
         <tbody>
         <tr th:each="c : ${cards}">
             <td>
-                <span th:text="${c.book.title}"></span>
+                <span th:text="${c.book.title}">Title</span>
                 <span class="kv">by </span>
-                <span th:text="${c.book.author}"></span>
+                <span th:text="${c.book.author}">Author</span>
             </td>
-            <td><span class="badge" th:text="${c.condition}"></span></td>
-            <td th:text="${c.available} ? 'Yes':'No'">Yes</td>
+            <td><span class="badge" th:text="${c.condition}">GOOD</span></td>
+            <td th:text="${c.available} ? 'Yes' : 'No'">Yes</td>
             <td class="row">
                 <a class="btn btn-secondary" th:href="@{|/library/${c.id}/edit|}">Edit</a>
+
                 <form th:action="@{|/library/${c.id}/delete|}" method="post"
                       onsubmit="return confirm('Delete listing?')">
+                    <!-- CSRF token (only if CSRF is enabled) -->
+                    <input th:if="${_csrf}" type="hidden"
+                           th:name="${_csrf.parameterName}"
+                           th:value="${_csrf.token}"/>
                     <button class="btn btn-danger">Delete</button>
                 </form>
             </td>
         </tr>
-        <tr th:if="${#lists.isEmpty(cards)}"><td colspan="4">No listings yet</td></tr>
+
+        <tr th:if="${#lists.isEmpty(cards)}">
+            <td colspan="4">No listings yet</td>
+        </tr>
         </tbody>
     </table>
 </section>

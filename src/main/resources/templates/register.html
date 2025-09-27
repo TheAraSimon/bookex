@@ -1,15 +1,43 @@
+<!-- src/main/resources/templates/register.html -->
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::content})}">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Register', ~{::content})}">
 <body>
 <section class="card" th:fragment="content">
     <div class="h1">Register</div>
+
     <form th:action="@{/register}" method="post" th:object="${req}">
         <div class="row">
-            <div class="field" style="flex:1"><label>Email</label><input class="input" th:field="*{email}" placeholder="you@example.com"/></div>
-            <div class="field"><label>Display Name</label><input class="input" th:field="*{username}" placeholder="Your name"/></div>
-            <div class="field"><label>Password</label><input type="password" class="input" th:field="*{password}"/></div>
+            <div class="field" style="flex:1">
+                <label>Email</label>
+                <input class="input" th:field="*{email}" placeholder="you@example.com" autocomplete="email"/>
+                <small class="error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></small>
+            </div>
+
+            <div class="field">
+                <label>Display Name</label>
+                <input class="input" th:field="*{username}" placeholder="Your name" autocomplete="username"/>
+                <small class="error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></small>
+            </div>
+
+            <div class="field">
+                <label>Password</label>
+                <input type="password" class="input" th:field="*{password}" autocomplete="new-password"/>
+                <small class="error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></small>
+            </div>
         </div>
-        <div class="actions"><button class="btn">Create account</button></div>
+
+        <!-- CSRF token (only if enabled) -->
+        <input th:if="${_csrf}" type="hidden"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}"/>
+
+        <div class="actions">
+            <button class="btn" type="submit">Create account</button>
+        </div>
+
+        <!-- High-level error from controller (e.g., email/username already used) -->
         <div class="kv" th:if="${error}" th:text="${error}" style="color:#b91c1c"></div>
     </form>
 </section>

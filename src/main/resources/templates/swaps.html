@@ -1,23 +1,44 @@
+<!-- src/main/resources/templates/swaps.html -->
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::content})}">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('My Swaps', ~{::content})}">
 <body>
 <section class="section" th:fragment="content">
     <div class="h1">My Swaps</div>
 
     <div class="h2">Inbox (for my listings)</div>
     <table class="table">
-        <thead><tr><th>ID</th><th>Book</th><th>From</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead>
+        <tr><th>ID</th><th>Book</th><th>From</th><th>Status</th><th>Actions</th></tr>
+        </thead>
         <tbody>
         <tr th:each="s : ${inbox}">
-            <td th:text="${s.id}"></td>
-            <td th:text="${s.listing.book.title}"></td>
-            <td th:text="${s.requester.displayName}"></td>
-            <td th:text="${s.status}"></td>
+            <td th:text="${s.id}">1</td>
+            <td th:text="${s.listing.book.title}">Title</td>
+            <td th:text="${s.requester.displayName}">Requester</td>
+            <td th:text="${s.status}">PENDING</td>
             <td class="row">
-                <form th:if="${s.status=='PENDING'}" th:action="@{|/swaps/${s.id}/accept|}" method="post"><button class="btn">Accept</button></form>
-                <form th:if="${s.status=='PENDING'}" th:action="@{|/swaps/${s.id}/decline|}" method="post"><button class="btn btn-secondary">Decline</button></form>
-                <form th:if="${s.status=='ACCEPTED'}" th:action="@{|/swaps/${s.id}/complete|}" method="post"><button class="btn btn-secondary">Complete</button></form>
-                <form th:if="${s.status=='ACCEPTED'}" th:action="@{|/swaps/${s.id}/cancel|}" method="post"><button class="btn btn-danger">Cancel</button></form>
+                <form th:if="${s.status == 'PENDING'}" th:action="@{|/swaps/${s.id}/accept|}" method="post">
+                    <input th:if="${_csrf}" type="hidden"
+                           th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button class="btn">Accept</button>
+                </form>
+                <form th:if="${s.status == 'PENDING'}" th:action="@{|/swaps/${s.id}/decline|}" method="post">
+                    <input th:if="${_csrf}" type="hidden"
+                           th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button class="btn btn-secondary">Decline</button>
+                </form>
+                <form th:if="${s.status == 'ACCEPTED'}" th:action="@{|/swaps/${s.id}/complete|}" method="post">
+                    <input th:if="${_csrf}" type="hidden"
+                           th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button class="btn btn-secondary">Complete</button>
+                </form>
+                <form th:if="${s.status == 'ACCEPTED'}" th:action="@{|/swaps/${s.id}/cancel|}" method="post">
+                    <input th:if="${_csrf}" type="hidden"
+                           th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button class="btn btn-danger">Cancel</button>
+                </form>
             </td>
         </tr>
         <tr th:if="${#lists.isEmpty(inbox)}"><td colspan="5">No inbox items</td></tr>
@@ -26,16 +47,26 @@
 
     <div class="h2">Outbox (my requests)</div>
     <table class="table">
-        <thead><tr><th>ID</th><th>Book</th><th>To</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead>
+        <tr><th>ID</th><th>Book</th><th>To</th><th>Status</th><th>Actions</th></tr>
+        </thead>
         <tbody>
         <tr th:each="s : ${outbox}">
-            <td th:text="${s.id}"></td>
-            <td th:text="${s.listing.book.title}"></td>
-            <td th:text="${s.owner.displayName}"></td>
-            <td th:text="${s.status}"></td>
+            <td th:text="${s.id}">1</td>
+            <td th:text="${s.listing.book.title}">Title</td>
+            <td th:text="${s.owner.displayName}">Owner</td>
+            <td th:text="${s.status}">PENDING</td>
             <td class="row">
-                <form th:if="${s.status=='ACCEPTED'}" th:action="@{|/swaps/${s.id}/complete|}" method="post"><button class="btn btn-secondary">Complete</button></form>
-                <form th:if="${s.status=='ACCEPTED'}" th:action="@{|/swaps/${s.id}/cancel|}" method="post"><button class="btn btn-danger">Cancel</button></form>
+                <form th:if="${s.status == 'ACCEPTED'}" th:action="@{|/swaps/${s.id}/complete|}" method="post">
+                    <input th:if="${_csrf}" type="hidden"
+                           th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button class="btn btn-secondary">Complete</button>
+                </form>
+                <form th:if="${s.status == 'ACCEPTED'}" th:action="@{|/swaps/${s.id}/cancel|}" method="post">
+                    <input th:if="${_csrf}" type="hidden"
+                           th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button class="btn btn-danger">Cancel</button>
+                </form>
             </td>
         </tr>
         <tr th:if="${#lists.isEmpty(outbox)}"><td colspan="5">No outbox items</td></tr>
